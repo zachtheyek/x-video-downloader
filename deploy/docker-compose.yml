@@ -1,0 +1,44 @@
+# Single-container deployment: uvicorn + in-process Huey consumer.
+# Run from the deploy/ dir:  docker compose up -d --build
+#
+# Migrating to the home stack later = change the `state` volume to a NAS mount
+# and (optionally) split the worker out — no code change.
+
+services:
+  engine:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: xdl:latest
+    container_name: xdl-engine
+    restart: unless-stopped
+    # SECURITY: this publishes 8080 on the host. Reachability is gated by Tailscale +
+    # the absence of an inbound VCN/firewall rule (see deploy/oracle-setup.md). Do NOT
+    # add a cloud ingress rule for 8080. To be stricter, bind to the Tailscale IP:
+    #   - "100.x.y.z:8080:8080"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./state:/data
+      # Optional burner cookies (anonymous-first means this is only a fallback).
+      # Create deploy/secrets/cookies.txt, chmod 600, then uncomment both lines:
+      # - ./secrets/cookies.txt:/secrets/cookies.txt:ro
+    environment:
+      - XDL_WORKERS=4
+      - XDL_FRAGMENTS=4
+      - XDL_MAX_ATTEMPTS=3
+      - XDL_RETRY_DELAY=60
+      # - XDL_COOKIES=/secrets/cookies.txt
+      # - XDL_SHARED_SECRET=change-me   # optional belt-and-suspenders header auth
+
+# --- Scaling option (later) -------------------------------------------------
+# Replace the single `engine` service above with a web + worker split sharing
+# the same image and volume. The web service drops the in-process consumer by
+# running uvicorn directly; the worker runs the Huey consumer:
+#
+#   web:
+#     command: uvicorn xdl.server:app --host 0.0.0.0 --port 8080
+#   worker:
+#     command: huey_consumer.py xdl.tasks.huey -w 4 -k thread
+#
+# For multi-node workers, swap SqliteHuey for huey + Redis in xdl/tasks.py.

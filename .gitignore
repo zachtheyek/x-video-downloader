@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+.pytest_cache/
+
+# Runtime state — never commit the ledger, archive, downloads, or queue
+/data/
+*.db
+*.db-wal
+*.db-shm
+failed.txt
+
+# Secrets — cookies are credentials, env holds host-specific config
+cookies.txt
+*.cookies.txt
+.env
+
+# OS
+.DS_Store

@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "x-video-downloader"
+version = "0.1.0"
+description = "Paste an X (Twitter) post link, get the highest-quality video. One engine, two thin clients (CLI + HTTP/iOS)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "zachtheyek" }]
+dependencies = [
+    "yt-dlp>=2025.1.1",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "huey>=2.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+xdl = "xdl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
