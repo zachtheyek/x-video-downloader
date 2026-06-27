@@ -32,3 +32,6 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# Run tests against the live source in src/ regardless of how (or whether) the
+# package is installed — so the suite never depends on a reinstall.
+pythonpath = ["src"]

@@ -76,7 +76,12 @@ def _cmd_redrive(args: argparse.Namespace, config: Config, ledger: Ledger) -> in
 
 
 def _cmd_serve(args: argparse.Namespace, config: Config, ledger: Ledger) -> int:
-    """Convenience: run the FastAPI server with an in-process Huey consumer."""
+    """Convenience: run the FastAPI server with an in-process Huey consumer.
+
+    The Huey consumer installs OS signal handlers, which only work in the main
+    thread, so it runs in the main thread and uvicorn runs in a background thread.
+    (uvicorn skips its own signal handlers automatically when off the main thread.)
+    """
     import threading
 
     import uvicorn
@@ -84,11 +89,14 @@ def _cmd_serve(args: argparse.Namespace, config: Config, ledger: Ledger) -> int:
 
     from .tasks import huey
 
-    consumer = Consumer(huey, workers=config.workers, worker_type="thread")
-    threading.Thread(target=consumer.run, daemon=True).start()
+    server = uvicorn.Server(
+        uvicorn.Config("xdl.server:app", host=config.host, port=config.port, log_level="info")
+    )
+    threading.Thread(target=server.run, daemon=True).start()
     print(f"xdl engine on http://{config.host}:{config.port} "
           f"({config.workers} workers)")
-    uvicorn.run("xdl.server:app", host=config.host, port=config.port, log_level="info")
+    consumer = Consumer(huey, workers=config.workers, worker_type="thread")
+    consumer.run()  # blocks in the main thread; Ctrl-C stops both
     return 0
 
 

@@ -54,7 +54,9 @@ MagicDNS name instead of an IP. See [the original plan](#plan) for the full rati
 ```bash
 git clone https://github.com/zachtheyek/x-video-downloader.git
 cd x-video-downloader
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"   # needs ffmpeg on PATH
+python3 -m venv .venv
+.venv/bin/pip install .          # regular (non-editable) install — most robust
+.venv/bin/pip install pytest httpx   # only if you want to run the tests
 
 # one-shot download → ./data/downloads (or set XDL_DOWNLOAD_DIR=~/Downloads)
 .venv/bin/xdl get "https://x.com/SpaceX/status/1732824684683784516"
@@ -63,6 +65,14 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"   # needs ffmpeg on P
 .venv/bin/xdl redrive            # re-run every dead job
 ```
 
+`ffmpeg` is required (HLS merge / MP4 remux): `brew install ffmpeg`.
+
+> A plain `pip install .` copies the package into the venv and Just Works. An
+> editable install (`pip install -e .`) is nicer for development but relies on `.pth`
+> path injection, which some Python setups don't honor — see Troubleshooting below.
+> After editing source under a non-editable install, re-run `pip install .`.
+> (Tests don't need any install: `pytest` reads `src/` directly.)
+
 Run the HTTP engine (for the iOS clients, or a hotkey on macOS):
 
 ```bash
@@ -70,16 +80,13 @@ Run the HTTP engine (for the iOS clients, or a hotkey on macOS):
 curl localhost:8080/healthz
 ```
 
-`ffmpeg` is required (HLS merge / MP4 remux): `brew install ffmpeg`.
-
 > **Troubleshooting — `ModuleNotFoundError: No module named 'xdl'` after install.**
-> Some Python builds (notably Anaconda/Miniconda interpreters) don't honor `.pth`
-> files inside a venv, which is how an editable install puts `src/` on the path — so
-> the entry-point script can't find the package. Fix: create the venv with a stock
-> CPython instead of conda's, e.g.
-> `/opt/homebrew/opt/python@3.12/bin/python3.12 -m venv .venv`, then reinstall. (Or do
-> a non-editable `pip install .`, which copies the package into site-packages and
-> doesn't rely on `.pth`.)
+> This only happens with *editable* installs (`pip install -e .`). Editable installs
+> put `src/` on the path via a `.pth` file, and some Python setups (Anaconda/Miniconda
+> interpreters, or any environment with a `sitecustomize` that rewrites `sys.path`)
+> silently don't apply it — so the `xdl` entry point can't import the package. Fix:
+> use a plain **`pip install .`** (copies the package into the venv, no `.pth`
+> involved). That's why the Quickstart uses it.
 
 ## HTTP API
 
