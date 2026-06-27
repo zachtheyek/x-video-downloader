@@ -72,6 +72,15 @@ curl localhost:8080/healthz
 
 `ffmpeg` is required (HLS merge / MP4 remux): `brew install ffmpeg`.
 
+> **Troubleshooting — `ModuleNotFoundError: No module named 'xdl'` after install.**
+> Some Python builds (notably Anaconda/Miniconda interpreters) don't honor `.pth`
+> files inside a venv, which is how an editable install puts `src/` on the path — so
+> the entry-point script can't find the package. Fix: create the venv with a stock
+> CPython instead of conda's, e.g.
+> `/opt/homebrew/opt/python@3.12/bin/python3.12 -m venv .venv`, then reinstall. (Or do
+> a non-editable `pip install .`, which copies the package into site-packages and
+> doesn't rely on `.pth`.)
+
 ## HTTP API
 
 | Endpoint | Purpose |
